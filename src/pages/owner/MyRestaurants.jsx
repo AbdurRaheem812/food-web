@@ -1,17 +1,17 @@
-import { useEffect, useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
-import { getMyRestaurants } from '../../api/restaurantApi';
+import { useEffect, useState } from "react";
+import { useNavigate, Link } from "react-router-dom";
+import { getMyRestaurants } from "../../api/restaurantApi";
 
 const STATUS_CONFIG = {
-  PENDING: { icon: '⏳', label: 'Under Review', color: 'text-orange-400' },
-  REJECTED: { icon: '✕', label: 'Rejected', color: 'text-red-400' },
-  APPROVED: { icon: '✓', label: 'Approved', color: 'text-green-400' },
+  PENDING: { icon: "⏳", label: "Under Review", color: "text-orange-400" },
+  REJECTED: { icon: "✕", label: "Rejected", color: "text-red-400" },
+  APPROVED: { icon: "✓", label: "Approved", color: "text-green-400" },
 };
 
 const MyRestaurants = () => {
   const navigate = useNavigate();
   const [restaurants, setRestaurants] = useState([]);
-  const [error, setError] = useState('');
+  const [error, setError] = useState("");
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -20,7 +20,10 @@ const MyRestaurants = () => {
         const data = await getMyRestaurants();
         setRestaurants(data);
       } catch (err) {
-        setError(err.response?.data?.error?.message || 'Could not load your restaurants.');
+        setError(
+          err.response?.data?.error?.message ||
+            "Could not load your restaurants.",
+        );
       } finally {
         setLoading(false);
       }
@@ -57,9 +60,11 @@ const MyRestaurants = () => {
 
         {restaurants.length === 0 && !error && (
           <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-3xl p-10 text-center">
-            <p className="text-white/60 mb-4">You haven't applied with any restaurant yet.</p>
+            <p className="text-white/60 mb-4">
+              You haven't applied with any restaurant yet.
+            </p>
             <button
-              onClick={() => navigate('/owner/onboarding')}
+              onClick={() => navigate("/owner/onboarding")}
               className="px-6 py-2 rounded-full bg-orange-500 text-white font-medium"
             >
               Start Application
@@ -76,24 +81,44 @@ const MyRestaurants = () => {
                 className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl p-5 flex items-center gap-4"
               >
                 {r.logoUrl ? (
-                  <img src={r.logoUrl} alt={r.name} className="w-14 h-14 rounded-xl object-cover border border-white/10" />
+                  <img
+                    src={r.logoUrl}
+                    alt={r.name}
+                    className="w-14 h-14 rounded-xl object-cover border border-white/10"
+                  />
                 ) : (
                   <div className="w-14 h-14 rounded-xl bg-white/10" />
                 )}
                 <div className="flex-1">
                   <p className="text-white font-semibold">{r.name}</p>
-                  <p className={`text-sm ${config.color}`}>{config.icon} {config.label}</p>
-                  {r.applicationStatus === 'REJECTED' && r.rejectionReason && (
-                    <p className="text-white/40 text-xs mt-1">{r.rejectionReason}</p>
+                  <p className={`text-sm ${config.color}`}>
+                    {config.icon} {config.label}
+                  </p>
+                  {r.applicationStatus === "REJECTED" && r.rejectionReason && (
+                    <p className="text-white/40 text-xs mt-1">
+                      {r.rejectionReason}
+                    </p>
                   )}
                 </div>
-                {r.applicationStatus === 'APPROVED' && (
-                  <button
-                    onClick={() => navigate(`/owner/restaurants/${r.id}/menu`)}
-                    className="px-4 py-2 rounded-full bg-white/10 hover:bg-white/20 text-white text-sm font-medium transition-colors"
-                  >
-                    Manage
-                  </button>
+                {r.applicationStatus === "APPROVED" && (
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() =>
+                        navigate(`/owner/restaurants/${r.id}/menu`)
+                      }
+                      className="px-4 py-2 rounded-full bg-white/10 hover:bg-white/20 text-white text-sm font-medium transition-colors"
+                    >
+                      Manage Menu
+                    </button>
+                    <button
+                      onClick={() =>
+                        navigate(`/owner/restaurants/${r.id}/orders`)
+                      }
+                      className="px-4 py-2 rounded-full bg-orange-500 hover:bg-orange-400 text-white text-sm font-medium transition-colors"
+                    >
+                      Orders
+                    </button>
+                  </div>
                 )}
               </div>
             );

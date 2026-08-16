@@ -7,6 +7,15 @@ import MyRestaurants from "./pages/owner/MyRestaurants";
 import MenuManagement from "./pages/owner/MenuManagement";
 import RestaurantListing from "./pages/RestaurantListing";
 import RestaurantDetail from "./pages/RestaurantDetails";
+import Cart from "./pages/Cart";
+import Checkout from "./pages/Checkout";
+import MyOrders from "./pages/customer/MyOrders";
+import OrderDetail from "./pages/customer/OrderDetail";
+import IncomingOrders from "./pages/owner/IncomingOrders";
+import ApplicationsQueue from "./pages/admin/ApplicationsQueue";
+import UsersTable from "./pages/admin/UserTable";
+import AdminStats from "./pages/admin/AdminStats";
+import Profile from "./pages/Profile";
 import ProtectedRoute from "./components/routing/ProtectedRoute";
 import RoleRoute from "./components/routing/RoleRoute";
 import NotAllowed from "./pages/NotAllowed";
@@ -36,17 +45,32 @@ function App() {
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
         <Route path="/not-allowed" element={<NotAllowed />} />
-        <Route path="/owner/restaurants/:restaurantId/menu" element={<MenuManagement />} />
+        <Route
+          path="/owner/restaurants/:restaurantId/menu"
+          element={<MenuManagement />}
+        />
         <Route path="/restaurants/:id" element={<RestaurantDetail />} />
 
         <Route element={<ProtectedRoute />}>
           <Route path="/dashboard" element={<CustomerDashboard />} />
+          <Route path="/cart" element={<Cart />} />
+          <Route path="/checkout" element={<Checkout />} />
+          <Route path="/orders" element={<MyOrders />} />
+          <Route path="/orders/:id" element={<OrderDetail />} />
+          <Route path="/profile" element={<Profile />} />
         </Route>
 
         <Route element={<RoleRoute allowedRoles={["OWNER"]} />}>
           <Route path="/owner/dashboard" element={<OwnerDashboard />} />
           <Route path="/owner/onboarding" element={<OwnerOnboarding />} />
           <Route path="/owner/restaurants" element={<MyRestaurants />} />
+          <Route path="/owner/orders" element={<IncomingOrders />} />
+        </Route>
+
+        <Route element={<RoleRoute allowedRoles={["ADMIN"]} />}>
+          <Route path="/admin" element={<ApplicationsQueue />} />
+          <Route path="/admin/users" element={<UsersTable />} />
+          <Route path="/admin/stats" element={<AdminStats />} />
         </Route>
       </Routes>
     </div>

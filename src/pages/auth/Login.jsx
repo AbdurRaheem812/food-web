@@ -22,7 +22,7 @@ const Login = () => {
       setServerError('');
       try {
         const user = await login(values.email, values.password);
-        navigate(user.roles.includes('OWNER') ? '/owner/onboarding' : '/dashboard');
+        navigate(user.roles.includes('OWNER') ? '/owner/orders' : '/');
       } catch (err) {
         setServerError(err.response?.data?.error?.message || 'Something went wrong. Please try again.');
       } finally {

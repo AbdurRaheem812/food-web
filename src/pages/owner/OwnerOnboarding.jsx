@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
 import { applyAsRestaurant, uploadRestaurantLogo } from '../../api/restaurantApi';
+import { ImageUploadPreview } from '../../components/form/ImageUploadPreview';
 
 const CUISINE_OPTIONS = ['Pakistani', 'Chinese', 'Italian', 'Fast Food', 'BBQ', 'Desserts'];
 
@@ -35,6 +36,7 @@ const OwnerOnboarding = () => {
   const [step, setStep] = useState(1);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [createdRestaurantId, setCreatedRestaurantId] = useState(null); 
 
   const [businessInfo, setBusinessInfo] = useState({
     name: '',
@@ -63,27 +65,21 @@ const OwnerOnboarding = () => {
     setError('');
     setLoading(true);
     try {
-      await applyAsRestaurant({
+      const restaurant = await applyAsRestaurant({
         ...businessInfo,
         deliveryFee: Number(businessInfo.deliveryFee),
         minimumOrder: Number(businessInfo.minimumOrder),
       });
+      setCreatedRestaurantId(restaurant.id);
       setStep(3);
     } catch (err) {
       setError(err.response?.data?.error?.message || 'Something went wrong.');
     } finally {
       setLoading(false);
     }
-  };
+};
 
-  const handleLogoChange = (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
-    setLogoFile(file);
-    setLogoPreview(URL.createObjectURL(file));
-  };
-
-  const handleLogoSubmit = async (e) => {
+const handleLogoSubmit = async (e) => {
     e.preventDefault();
     if (!logoFile) {
       setError('Please select a logo image.');
@@ -92,14 +88,21 @@ const OwnerOnboarding = () => {
     setError('');
     setLoading(true);
     try {
-      await uploadRestaurantLogo(logoFile);
-      navigate('/owner/application-status');
+      await uploadRestaurantLogo(createdRestaurantId, logoFile); 
+      navigate('/owner/restaurants');
     } catch (err) {
       setError(err.response?.data?.error?.message || 'Something went wrong.');
     } finally {
       setLoading(false);
     }
-  };
+};
+
+const handleLogoChange = (e) => {
+  const file = e.target.files[0];
+  if (!file) return;
+  setLogoFile(file);
+  setLogoPreview(URL.createObjectURL(file));
+};
 
   return (
     <div className="min-h-screen bg-[#0D0D0F] flex items-center justify-center px-4 py-12">
@@ -190,19 +193,17 @@ const OwnerOnboarding = () => {
           </form>
         )}
 
-        {/* Step 3 — logo upload */}
+        {/* Step 3 — logo upload */}        
         {step === 3 && (
           <form onSubmit={handleLogoSubmit} className="flex flex-col gap-4 items-center">
             <h2 className="text-xl font-bold text-white mb-1 self-start">Upload your logo</h2>
 
-            <label className="w-40 h-40 rounded-3xl border-2 border-dashed border-white/20 flex items-center justify-center cursor-pointer overflow-hidden bg-white/5 hover:border-orange-500 transition-colors">
-              {logoPreview ? (
-                <img src={logoPreview} alt="Logo preview" className="w-full h-full object-cover" />
-              ) : (
-                <span className="text-white/40 text-sm text-center px-4">Click to select image</span>
-              )}
-              <input type="file" accept="image/jpeg,image/png,image/webp" onChange={handleLogoChange} className="hidden" />
-            </label>
+            <ImageUploadPreview
+              preview={logoPreview}
+              onChange={handleLogoChange}
+              size="w-40 h-40"
+              label="Click to select logo image"
+            />
 
             <button
               type="submit"

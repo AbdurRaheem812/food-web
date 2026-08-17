@@ -1,7 +1,10 @@
 import { useEffect, useState } from "react";
 import { useParams, Link } from "react-router-dom";
+import { useCart } from "../hooks/useCart";
+import { useAuth } from "../hooks/useAuth";
 import { getRestaurantById } from "../api/restaurantApi";
 import { getMenuItems } from "../api/menuApi";
+import { getRestaurantReviews } from "../api/reviewApi";
 
 const RestaurantDetail = () => {
   const { id } = useParams();
@@ -9,18 +12,28 @@ const RestaurantDetail = () => {
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const { user } = useAuth();
+  const { addItem, conflict, confirmReplaceCart, dismissConflict } = useCart();
+  const [addingId, setAddingId] = useState(null);
+  const [reviewData, setReviewData] = useState({
+    reviews: [],
+    avgRating: null,
+    reviewCount: 0,
+  });
 
   useEffect(() => {
     const load = async () => {
       setLoading(true);
       setError("");
       try {
-        const [restaurantData, itemsData] = await Promise.all([
+        const [restaurantData, itemsData, reviewsData] = await Promise.all([
           getRestaurantById(id),
           getMenuItems(id),
+          getRestaurantReviews(id),
         ]);
         setRestaurant(restaurantData);
         setItems(itemsData);
+        setReviewData(reviewsData);
       } catch (err) {
         setError(
           err.response?.data?.error?.message ||
@@ -32,6 +45,15 @@ const RestaurantDetail = () => {
     };
     load();
   }, [id]);
+
+  const handleAddToCart = async (itemId) => {
+    setAddingId(itemId);
+    const result = await addItem(itemId, 1);
+    setAddingId(null);
+    if (!result.success && !result.conflict) {
+      alert(result.message);
+    }
+  };
 
   const RestaurantDetailSkeleton = () => (
     <div className="min-h-screen bg-[#0D0D0F] pb-16 animate-pulse">
@@ -129,6 +151,12 @@ const RestaurantDetail = () => {
               </p>
             </div>
           </div>
+          {reviewData.avgRating && (
+            <p className="text-orange-400 text-sm mt-1">
+              ★ {reviewData.avgRating} ({reviewData.reviewCount} review
+              {reviewData.reviewCount !== 1 ? "s" : ""})
+            </p>
+          )}
 
           {!restaurant.isOpen && (
             <div className="mt-4 px-4 py-2 rounded-xl bg-red-500/10 border border-red-500/30 text-red-400 text-sm inline-block">
@@ -201,6 +229,16 @@ const RestaurantDetail = () => {
                           Currently unavailable
                         </p>
                       )}
+                      {user?.roles?.includes("CUSTOMER") &&
+                        item.isAvailable && (
+                          <button
+                            onClick={() => handleAddToCart(item.id)}
+                            disabled={addingId === item.id}
+                            className="mt-2 px-3 py-1.5 rounded-full bg-orange-500 hover:bg-orange-400 disabled:opacity-50 text-white text-xs font-medium"
+                          >
+                            {addingId === item.id ? "Adding..." : "Add to Cart"}
+                          </button>
+                        )}
                     </div>
                   </div>
                 ))}
@@ -209,6 +247,56 @@ const RestaurantDetail = () => {
           ))
         )}
       </div>
+      {reviewData.reviews.length > 0 && (
+        <div className="max-w-4xl mx-auto px-4 mt-10">
+          <h2 className="text-xl font-bold text-white mb-4">Reviews</h2>
+          <div className="flex flex-col gap-3">
+            {reviewData.reviews.map((r) => (
+              <div
+                key={r.id}
+                className="bg-white/5 border border-white/10 rounded-2xl p-4"
+              >
+                <div className="flex justify-between items-center mb-1">
+                  <span className="text-white font-medium text-sm">
+                    {r.customer.username}
+                  </span>
+                  <span className="text-orange-400 text-sm">
+                    {"★".repeat(r.rating)}
+                    {"☆".repeat(5 - r.rating)}
+                  </span>
+                </div>
+                {r.comment && (
+                  <p className="text-white/60 text-sm">{r.comment}</p>
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+      {conflict && (
+        <div className="fixed inset-0 bg-black/60 flex items-center justify-center px-4 z-50">
+          <div className="bg-[#151517] border border-white/10 rounded-2xl p-6 max-w-sm text-center">
+            <p className="text-white mb-4">
+              Your cart has items from a different restaurant. Clear it and
+              start a new order here?
+            </p>
+            <div className="flex gap-3 justify-center">
+              <button
+                onClick={dismissConflict}
+                className="px-4 py-2 rounded-full bg-white/10 text-white text-sm"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={confirmReplaceCart}
+                className="px-4 py-2 rounded-full bg-orange-500 text-white text-sm"
+              >
+                Clear & Add
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

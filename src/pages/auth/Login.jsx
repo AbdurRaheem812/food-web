@@ -1,34 +1,35 @@
-import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
+import { useFormik } from 'formik';
+import { useState } from 'react';
 import { useAuth } from '../../hooks/useAuth';
+import { loginSchema } from '../../validation/loginSchema';
+
+const inputClass =
+  'bg-white/5 border border-white/10 rounded-full px-5 py-3 text-white placeholder-white/40 focus:outline-none focus:border-orange-500 transition-colors w-full';
+
+const FieldError = ({ touched, error }) =>
+  touched && error ? <p className="text-red-400 text-xs px-2 mb-2">{error}</p> : null;
 
 const Login = () => {
   const { login } = useAuth();
   const navigate = useNavigate();
+  const [serverError, setServerError] = useState('');
 
-  const [form, setForm] = useState({ email: '', password: '' });
-  const [error, setError] = useState('');
-  const [loading, setLoading] = useState(false);
-
-  const handleChange = (e) => {
-    setForm({ ...form, [e.target.name]: e.target.value });
-  };
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setError('');
-    setLoading(true);
-    try {
-      const user = await login(form.email, form.password);
-      const roles = user.roles;
-      if (roles.includes('OWNER')) navigate('/owner/onboarding');
-      else navigate('/dashboard');
-    } catch (err) {
-      setError(err.response?.data?.error?.message || 'Something went wrong. Please try again.');
-    } finally {
-      setLoading(false);
-    }
-  };
+  const formik = useFormik({
+    initialValues: { email: '', password: '' },
+    validationSchema: loginSchema,
+    onSubmit: async (values, { setSubmitting }) => {
+      setServerError('');
+      try {
+        const user = await login(values.email, values.password);
+        navigate(user.roles.includes('OWNER') ? '/owner/onboarding' : '/dashboard');
+      } catch (err) {
+        setServerError(err.response?.data?.error?.message || 'Something went wrong. Please try again.');
+      } finally {
+        setSubmitting(false);
+      }
+    },
+  });
 
   return (
     <div className="min-h-screen bg-[#0D0D0F] flex items-center justify-center px-4">
@@ -36,38 +37,41 @@ const Login = () => {
         <h1 className="text-3xl font-bold text-white mb-1">Welcome back</h1>
         <p className="text-white/50 mb-6">Log in to continue ordering</p>
 
-        {error && (
+        {serverError && (
           <div className="mb-4 px-4 py-3 rounded-xl bg-red-500/10 border border-red-500/30 text-red-400 text-sm">
-            {error}
+            {serverError}
           </div>
         )}
 
-        <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+        <form onSubmit={formik.handleSubmit} className="flex flex-col gap-1" noValidate>
           <input
             type="email"
             name="email"
             placeholder="Email"
-            value={form.email}
-            onChange={handleChange}
-            required
-            className="bg-white/5 border border-white/10 rounded-full px-5 py-3 text-white placeholder-white/40 focus:outline-none focus:border-orange-500 transition-colors"
+            className={inputClass}
+            value={formik.values.email}
+            onChange={formik.handleChange}
+            onBlur={formik.handleBlur}
           />
+          <FieldError touched={formik.touched.email} error={formik.errors.email} />
+
           <input
             type="password"
             name="password"
             placeholder="Password"
-            value={form.password}
-            onChange={handleChange}
-            required
-            className="bg-white/5 border border-white/10 rounded-full px-5 py-3 text-white placeholder-white/40 focus:outline-none focus:border-orange-500 transition-colors"
+            className={inputClass}
+            value={formik.values.password}
+            onChange={formik.handleChange}
+            onBlur={formik.handleBlur}
           />
+          <FieldError touched={formik.touched.password} error={formik.errors.password} />
 
           <button
             type="submit"
-            disabled={loading}
-            className="mt-2 bg-orange-500 hover:bg-orange-400 disabled:opacity-50 text-white font-semibold py-3 rounded-full shadow-[0_0_20px_rgba(255,122,26,0.4)] transition-colors"
+            disabled={formik.isSubmitting}
+            className="mt-3 bg-orange-500 hover:bg-orange-400 disabled:opacity-50 text-white font-semibold py-3 rounded-full shadow-[0_0_20px_rgba(255,122,26,0.4)] transition-colors"
           >
-            {loading ? 'Logging in...' : 'Log In'}
+            {formik.isSubmitting ? 'Logging in...' : 'Log In'}
           </button>
         </form>
 
